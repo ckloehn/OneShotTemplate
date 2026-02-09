@@ -1,0 +1,100 @@
+# ==============================================================================
+# PROJECT CONFIGURATION
+# ==============================================================================
+# Fill this out before starting the workflow. This drives all agent behavior.
+# ==============================================================================
+
+project:
+  name: ""                          # e.g., "MyApp"
+  description: ""                   # One-line project description
+  type: "web-app"                   # web-app | desktop-app | api | cli | library
+  version: "0.1.0"                  # Starting version
+
+# ==============================================================================
+# EXECUTION MODE
+# ==============================================================================
+# autonomous       — Agents proceed through all phases without pausing
+# human-in-the-loop — Agents pause at every quality gate for human approval
+# hybrid           — Autonomous within phases, human approval between phases
+# ==============================================================================
+
+mode: "hybrid"
+
+# ==============================================================================
+# TECH STACK (leave blank for Architect agent to decide based on PRD)
+# ==============================================================================
+
+tech_stack:
+  language: ""                      # e.g., "TypeScript", "Python", "Rust", "C#"
+  framework: ""                     # e.g., "Next.js", "Django", "Tauri", "Electron"
+  database: ""                      # e.g., "PostgreSQL", "SQLite", "MongoDB"
+  ui_framework: ""                  # e.g., "React", "Vue", "Qt", "WPF"
+  testing: ""                       # e.g., "Jest", "pytest", "xUnit"
+  build_tool: ""                    # e.g., "Vite", "Webpack", "cargo", "MSBuild"
+  package_manager: ""               # e.g., "npm", "pip", "cargo", "nuget"
+
+# ==============================================================================
+# AGENT CONFIGURATION
+# ==============================================================================
+
+agents:
+  orchestrator:
+    enabled: true
+  architect:
+    enabled: true
+  implementer:
+    enabled: true
+    max_parallel_tasks: 3           # How many implementation tasks can run in parallel
+  tester:
+    enabled: true
+    coverage_threshold: 80          # Minimum test coverage percentage
+  reviewer:
+    enabled: true
+    auto_approve_minor: false       # Auto-approve trivial changes in autonomous mode
+  devops:
+    enabled: true
+  debugger:
+    enabled: true
+
+# ==============================================================================
+# QUALITY GATES
+# ==============================================================================
+
+quality_gates:
+  require_tests: true               # Block merge if no tests
+  require_review: true              # Block merge if not reviewed
+  require_passing_build: true       # Block deployment if build fails
+  require_security_scan: true       # Run security audit before deployment
+  max_complexity: 15                # Max cyclomatic complexity per function
+  min_coverage: 80                  # Minimum test coverage percentage
+
+# ==============================================================================
+# HUMAN-IN-THE-LOOP CONFIGURATION
+# ==============================================================================
+
+human_review:
+  # Which transitions require human approval (in hybrid/hitl modes)
+  approval_points:
+    - "discovery_to_architecture"
+    - "architecture_to_scaffolding"
+    - "scaffolding_to_implementation"
+    - "implementation_to_integration"
+    - "integration_to_deployment"
+
+  # How the system notifies humans
+  notification_method: "console"    # console | file | webhook
+
+  # Timeout before auto-proceeding (0 = wait forever)
+  approval_timeout_minutes: 0
+
+# ==============================================================================
+# PATHS
+# ==============================================================================
+
+paths:
+  prd: "docs/PRD.md"
+  tech_spec: "docs/TECH_SPEC.md"
+  source: "src/"
+  tests: "tests/"
+  build: "dist/"
+  cascade_state: ".cascade/"
