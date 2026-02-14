@@ -1,102 +1,111 @@
-# Multi-Agent AI Development Framework
+# Multi-Agent AI Development Framework (Local LLM Edition)
 
-A tech-agnostic template and workflow for building software using coordinated AI agents.
+A tech-agnostic template and workflow for building software using coordinated AI agents,
+**optimized for local LLMs** (Llama, DeepSeek, Mistral, CodeQwen, Phi, etc.).
+
 Supports MVP delivery, feature additions, bug fixes, and maintenance for **any** project
 type — web apps, desktop apps, APIs, CLIs, or libraries.
 
 ---
 
+## What Makes This Different from the Standard Branch
+
+This branch is specifically optimized for local LLMs with limited context windows:
+
+| Standard Branch | This Branch (Local LLM) |
+|----------------|------------------------|
+| Narrative agent prompts | Terse, imperative directives |
+| Agents read many files | Agents read only listed files |
+| Implicit output expectations | Exact output format specifications |
+| Multi-step sessions assumed | One agent, one task per session |
+| Context carried in model memory | Context carried in `.cascade/` files |
+| Autonomous mode works well | Human-in-the-loop recommended |
+
+---
+
 ## Quick Start
 
-### 1. Clone this template
-```bash
-git clone <this-repo> my-project
-cd my-project
-```
-
-### 2. Write your PRD
+### 1. Write your PRD
 ```bash
 cp templates/prd/PRD_TEMPLATE.md docs/PRD.md
 # Edit docs/PRD.md with your product requirements
 ```
 
-### 3. Configure the project
-```bash
-# Edit config/project.yaml:
-#   - Set project name, type, and description
-#   - Choose mode: autonomous | hybrid | human-in-the-loop
-#   - Optionally pre-select tech stack (or let the Architect choose)
-```
+### 2. Configure the project
+Edit `config/project.yaml`:
+- Set project name, type, description
+- Set `mode: "human-in-the-loop"` (recommended)
+- Set `local_llm.context_window` to your model's context size
+- Set `local_llm.model_name` to your model
 
-### 4. Start the workflow
-```bash
-chmod +x scripts/start-workflow.sh
-./scripts/start-workflow.sh
-```
-This generates a prompt you copy into your AI assistant (Claude Code, Claude, etc.)
-to start the Orchestrator agent.
+### 3. Follow the Local LLM Guide
+Read **[LOCAL_LLM_GUIDE.md](LOCAL_LLM_GUIDE.md)** for step-by-step session instructions,
+including exactly what to paste into your LLM for each phase.
 
 ---
 
 ## How It Works
 
-This framework defines **7 specialized AI agents** that collaborate through **7 workflow
-phases** to build your software. A quality gate checklist guards each phase transition.
+7 specialized agent roles work through 7 phases. With local LLMs, **you are the
+orchestrator** — you run each agent as a separate LLM session and carry context
+between sessions using the `.cascade/` directory.
 
 ### The Agents
 
-| Agent | What It Does |
-|-------|-------------|
-| **Orchestrator** | Central coordinator. Routes tasks, manages state, enforces quality gates, handles human approval. |
-| **Architect** | Chooses tech stack, designs system architecture, data models, APIs. Produces the technical specification. |
-| **Implementer** | Writes production code. Follows the tech spec, writes clean code, creates unit tests alongside implementation. |
-| **Tester** | Writes and runs tests (unit, integration, E2E). Identifies edge cases. Reports coverage metrics. |
-| **Reviewer** | Code review and security audit. Checks correctness, OWASP compliance, maintainability, architecture adherence. |
-| **DevOps** | Project scaffolding, build configuration, CI/CD pipeline, deployment execution. |
-| **Debugger** | Root cause analysis for bugs. Systematic investigation, minimal targeted fixes, regression tests. |
+| Agent | File | What It Does |
+|-------|------|-------------|
+| Orchestrator | `agents/00-orchestrator.md` | Extracts requirements, manages phase transitions |
+| Architect | `agents/01-architect.md` | Chooses tech stack, designs system architecture |
+| Implementer | `agents/02-implementer.md` | Writes production code for ONE feature per session |
+| Tester | `agents/03-tester.md` | Writes tests for ONE feature per session |
+| Reviewer | `agents/04-reviewer.md` | Reviews code against security/quality checklists |
+| DevOps | `agents/05-devops.md` | Scaffolds project structure, handles deployment |
+| Debugger | `agents/06-debugger.md` | Finds root causes and writes minimal fixes |
 
 ### The Phases
 
 ```
-Phase 1: Discovery    → Parse PRD, extract requirements, identify risks
-Phase 2: Architecture → Choose tech stack, design system, write tech spec
-Phase 3: Scaffolding  → Generate project structure, configure tooling
-Phase 4: Implementation → Build features (plan → code → test → review loop)
-Phase 5: Integration  → E2E testing, performance, security audit
-Phase 6: Deployment   → Build, deploy, smoke test, document
-Phase 7: Maintenance  → Bug fixes, new features, refactoring
+Phase 1: Discovery    → Extract requirements from PRD (1 session)
+Phase 2: Architecture → Design system and write tech spec (1 session)
+Phase 3: Scaffolding  → Generate project structure (1 session)
+Phase 4: Implementation → Build features (3-4 sessions PER FEATURE)
+Phase 5: Integration  → E2E testing and security audit (1-2 sessions)
+Phase 6: Deployment   → Build, deploy, document (1 session)
+Phase 7: Maintenance  → Bug fixes and new features (re-enter at appropriate phase)
 ```
 
-### Human-in-the-Loop Modes
+### Session Flow for Each Feature
 
-| Mode | Behavior |
-|------|----------|
-| `autonomous` | Agents proceed through all phases without pausing. All decisions logged for review. |
-| `hybrid` | Agents work autonomously within each phase, but pause between phases for human approval. |
-| `human-in-the-loop` | Agents pause at every quality gate for human review and direction. |
+```
+┌──────────────┐     ┌──────────┐     ┌──────────┐     ┌──────────┐
+│ Implementer  │────▶│  Tester  │────▶│ Reviewer │────▶│   Done   │
+│ (write code) │     │ (tests)  │     │ (review) │     │ or fix   │
+└──────────────┘     └──────────┘     └──────────┘     └──────────┘
+       ▲                                    │
+       └────────────────────────────────────┘
+                  (if changes requested)
+```
 
 ---
 
 ## Project Structure
 
 ```
-├── CLAUDE.md                          # Framework entry point — read this first
+├── CLAUDE.md                          # Framework entry point
+├── LOCAL_LLM_GUIDE.md                 # Step-by-step local LLM instructions
 ├── README.md                          # This file
 ├── config/
-│   └── project.yaml                   # Project configuration (mode, tech stack, etc.)
-├── docs/                              # YOUR project documents
+│   └── project.yaml                   # Project config + local LLM settings
+├── docs/
 │   ├── PRD.md                         # Your Product Requirements Document
-│   ├── TECH_SPEC.md                   # Technical spec (Architect creates this)
-│   └── DEPLOYMENT.md                  # Deployment docs (DevOps creates this)
+│   └── TECH_SPEC.md                   # Technical spec (Architect creates)
 ├── templates/
-│   ├── prd/
-│   │   └── PRD_TEMPLATE.md            # PRD template with guided sections
-│   ├── specs/
-│   │   └── TECH_SPEC_TEMPLATE.md      # Tech spec template
+│   ├── prd/PRD_TEMPLATE.md
+│   ├── specs/TECH_SPEC_TEMPLATE.md
 │   └── scaffolding/
-│       ├── web-app/SCAFFOLD_GUIDE.md  # Web app structure patterns
-│       └── desktop-app/SCAFFOLD_GUIDE.md # Desktop app structure patterns
-├── agents/                            # Agent role definitions
+│       ├── web-app/SCAFFOLD_GUIDE.md
+│       └── desktop-app/SCAFFOLD_GUIDE.md
+├── agents/                            # Agent definitions (load ONE per session)
 │   ├── 00-orchestrator.md
 │   ├── 01-architect.md
 │   ├── 02-implementer.md
@@ -104,71 +113,37 @@ Phase 7: Maintenance  → Bug fixes, new features, refactoring
 │   ├── 04-reviewer.md
 │   ├── 05-devops.md
 │   └── 06-debugger.md
-├── workflows/                         # Workflow phase definitions
-│   ├── ORCHESTRATOR.md                # Master workflow engine
-│   ├── phase-1-discovery.md
-│   ├── phase-2-architecture.md
-│   ├── phase-3-scaffolding.md
-│   ├── phase-4-implementation.md
-│   ├── phase-5-integration.md
-│   ├── phase-6-deployment.md
-│   └── phase-7-maintenance.md
-├── quality-gates/                     # Phase transition checklists
-│   ├── 01-discovery.md
-│   ├── 02-architecture.md
-│   ├── 03-scaffolding.md
-│   ├── 04-implementation.md
-│   ├── 05-integration.md
-│   └── 06-deployment.md
+├── workflows/
+│   ├── ORCHESTRATOR.md
+│   └── phase-[1-7]-*.md
+├── quality-gates/
+│   └── [01-06]-*.md
 ├── scripts/
-│   └── start-workflow.sh              # Workflow starter script
-├── .cascade/                          # Runtime state (agent logs, decisions)
-│   ├── state.md                       # Current workflow phase and status
-│   ├── decisions.md                   # All decisions with rationale
-│   ├── handoffs.md                    # Agent-to-agent transition log
-│   └── maintenance-log.md            # Post-deployment change log
-└── src/                               # YOUR source code (created during scaffolding)
+│   └── start-workflow.sh
+├── .cascade/                          # Shared state between LLM sessions
+│   ├── state.md
+│   ├── decisions.md
+│   ├── handoffs.md
+│   ├── discovery-output.md
+│   ├── implementation-plan.md
+│   ├── reviews/                       # Code review outputs
+│   └── maintenance-log.md
+└── src/                               # Your source code
 ```
 
 ---
 
-## Entering the Workflow at Different Points
+## Model Recommendations
 
-### Full MVP (Phase 1)
-Start from Discovery when building a new product from a PRD.
+| Task | Minimum | Recommended |
+|------|---------|-------------|
+| Requirements & Architecture | 13B general | 33B+ general |
+| Code Implementation | 7B code-specialized | 33B+ code model |
+| Testing | 7B code-specialized | 13B+ code model |
+| Code Review | 13B general | 33B+ general |
 
-### New Feature (Phase 4)
-Skip directly to Implementation when adding a feature to an existing codebase.
-Requires an existing tech spec.
-
-### Bug Fix (Phase 7)
-Enter Maintenance mode with a bug report. The Debugger agent investigates root cause,
-then the fix flows through implementation → test → review → deploy.
-
-### Refactoring (Phase 7)
-Enter Maintenance mode with a refactoring request. The Architect re-designs, the
-Implementer executes, all existing tests must continue to pass.
-
----
-
-## Customization
-
-### Pre-selecting a Tech Stack
-Fill in the `tech_stack` section of `config/project.yaml` to constrain the Architect's
-choices. Leave fields blank to let the Architect decide.
-
-### Adjusting Quality Standards
-Modify thresholds in `config/project.yaml`:
-- `coverage_threshold` — minimum test coverage
-- `max_complexity` — maximum cyclomatic complexity
-- `require_security_scan` — enable/disable security audit
-
-### Adding Custom Agents
-Create a new file in `agents/` following the existing pattern. Update `CLAUDE.md` and
-`config/project.yaml` to include the new agent.
-
-### Modifying Workflow
-Edit phase files in `workflows/` and corresponding quality gates in `quality-gates/`.
+Code-specialized models (DeepSeek Coder, CodeQwen, Codestral) significantly
+outperform general models for implementation and testing.
 
 ---
 

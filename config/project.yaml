@@ -18,7 +18,32 @@ project:
 # hybrid           — Autonomous within phases, human approval between phases
 # ==============================================================================
 
-mode: "hybrid"
+mode: "human-in-the-loop"          # Recommended for local LLMs
+
+# ==============================================================================
+# LOCAL LLM CONFIGURATION
+# ==============================================================================
+# These settings help optimize the framework for local model constraints.
+# ==============================================================================
+
+local_llm:
+  # Your model's effective context window in tokens
+  context_window: 8192             # e.g., 4096, 8192, 16384, 32768, 131072
+
+  # Model name (for documentation purposes)
+  model_name: ""                   # e.g., "llama-3.1-8b", "deepseek-coder-33b", "codestral-22b"
+
+  # Session strategy:
+  #   single-agent   — One agent per LLM session (recommended for <16K context)
+  #   multi-step     — Agent + one workflow phase per session (for 16K-64K)
+  #   extended        — Multiple steps per session (for 64K+ context)
+  session_strategy: "single-agent"
+
+  # Max files to include in a single session's context
+  max_input_files: 5
+
+  # Max source code files to read per session (prevents context overflow)
+  max_source_files: 3
 
 # ==============================================================================
 # TECH STACK (leave blank for Architect agent to decide based on PRD)
@@ -44,13 +69,13 @@ agents:
     enabled: true
   implementer:
     enabled: true
-    max_parallel_tasks: 3           # How many implementation tasks can run in parallel
+    max_parallel_tasks: 1           # Keep at 1 for local LLMs (one feature per session)
   tester:
     enabled: true
     coverage_threshold: 80          # Minimum test coverage percentage
   reviewer:
     enabled: true
-    auto_approve_minor: false       # Auto-approve trivial changes in autonomous mode
+    auto_approve_minor: false
   devops:
     enabled: true
   debugger:
@@ -73,7 +98,6 @@ quality_gates:
 # ==============================================================================
 
 human_review:
-  # Which transitions require human approval (in hybrid/hitl modes)
   approval_points:
     - "discovery_to_architecture"
     - "architecture_to_scaffolding"
@@ -81,10 +105,9 @@ human_review:
     - "implementation_to_integration"
     - "integration_to_deployment"
 
-  # How the system notifies humans
-  notification_method: "console"    # console | file | webhook
+  notification_method: "console"    # console | file
 
-  # Timeout before auto-proceeding (0 = wait forever)
+  # For local LLMs, always wait for human (0 = wait forever)
   approval_timeout_minutes: 0
 
 # ==============================================================================

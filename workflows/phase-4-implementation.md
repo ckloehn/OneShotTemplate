@@ -1,81 +1,118 @@
-# Phase 4: Implementation
+# Phase 4: Implementation (Local LLM Optimized)
 
 ## Purpose
-Build all MVP features iteratively. Each feature goes through a plan → code → test →
-review cycle. This phase involves the most agent collaboration.
+Build features one at a time. Each feature = one LLM session per step.
 
-## Primary Agents
-- **Implementer** — writes code
-- **Tester** — writes and runs tests
-- **Reviewer** — reviews code quality and security
+## Session Breakdown
 
-## Inputs
-- `docs/TECH_SPEC.md` — Architecture and design
-- `docs/PRD.md` — User stories and acceptance criteria
-- `.cascade/discovery-output.md` — Prioritized feature list
-- Scaffolded project in `src/`
+Each feature requires 3-4 separate LLM sessions:
 
-## Process (Per Feature)
+```
+Session 1: Implementer   → writes code for ONE feature
+Session 2: Tester        → writes tests for that feature
+Session 3: Reviewer      → reviews code + tests
+Session 4: Implementer   → fixes review findings (if any)
+```
 
-### Step 1: Feature Planning (Implementer)
-1. Read the user story and acceptance criteria
-2. Read relevant sections of the tech spec
-3. Break the feature into implementation tasks
-4. Identify files to create/modify
-5. Identify dependencies on other features
-6. Write plan to `.cascade/implementation-plan.md`
+## Per-Feature Session Instructions
 
-### Step 2: Implementation (Implementer)
-1. Create/modify files according to the plan
-2. Follow the architecture patterns from the tech spec
-3. Write clean, maintainable code
-4. Add inline documentation where logic is non-obvious
-5. Run the build to verify no compile errors
+### Session 1: Implement Feature
 
-### Step 3: Unit Testing (Tester)
-1. Read the implementation and acceptance criteria
-2. Write unit tests covering:
-   - Happy path (AC met)
-   - Edge cases (boundary values, empty inputs)
-   - Error cases (invalid input, failure conditions)
-3. Run tests and report results
-4. Report coverage metrics
+**Load into LLM context:**
+1. `agents/02-implementer.md` (system prompt)
+2. `.cascade/handoffs.md` (find the task)
+3. `docs/TECH_SPEC.md` (relevant sections only — trim to save context)
+4. Existing source files that will be modified (max 3 files)
 
-### Step 4: Code Review (Reviewer)
-1. Review implementation against tech spec
-2. Check security (OWASP top 10)
-3. Check code quality and maintainability
-4. Check test coverage and quality
-5. Produce review with findings:
-   - **Critical**: Must fix before proceeding
-   - **Important**: Should fix
-   - **Suggestion**: Nice to have
+**Prompt:**
+```
+You are the Implementer agent. Read agents/02-implementer.md for your instructions.
+Your task is in .cascade/handoffs.md. Implement the feature described there.
+```
 
-### Step 5: Iteration (Implementer)
-1. Address all critical findings
-2. Address important findings
-3. Re-run tests
-4. Request re-review if critical findings existed
+**After session:** Check that the LLM wrote source files and updated handoffs.md.
 
-### Step 6: Feature Complete
-Mark feature as done when:
-- All acceptance criteria met
-- All critical/important review findings addressed
-- All tests pass
-- Coverage meets threshold
+---
 
-## Feature Prioritization
-Process features in this order:
-1. **P0 features** — MVP must-haves (implement all)
-2. **P1 features** — Important (implement if time allows)
-3. **P2 features** — Nice-to-have (defer to post-MVP)
+### Session 2: Write Tests
 
-## Parallel Implementation
-When features are independent (no shared dependencies), multiple features can be
-implemented in parallel by separate Implementer instances.
+**Load into LLM context:**
+1. `agents/03-tester.md` (system prompt)
+2. `.cascade/handoffs.md` (find the implementer's output)
+3. The source files that were just created/modified
+4. `docs/PRD.md` (only the relevant user story)
+
+**Prompt:**
+```
+You are the Tester agent. Read agents/03-tester.md for your instructions.
+Write tests for the feature described in .cascade/handoffs.md.
+```
+
+**After session:** Run the tests yourself. Verify they pass.
+
+---
+
+### Session 3: Review
+
+**Load into LLM context:**
+1. `agents/04-reviewer.md` (system prompt)
+2. The source files that were created/modified
+3. The test files that were created
+4. `docs/TECH_SPEC.md` (relevant sections only)
+
+**Prompt:**
+```
+You are the Reviewer agent. Read agents/04-reviewer.md for your instructions.
+Review the files listed in .cascade/handoffs.md.
+```
+
+**After session:** Read the review. If APPROVED, move to next feature. If not, do Session 4.
+
+---
+
+### Session 4: Fix Findings (only if review had critical/important findings)
+
+**Load into LLM context:**
+1. `agents/02-implementer.md` (system prompt)
+2. The review from `.cascade/reviews/[feature-name].md`
+3. The source files that need fixing
+
+**Prompt:**
+```
+You are the Implementer agent. Fix the findings in the code review.
+The review is in .cascade/reviews/[feature-name].md.
+Fix ONLY the critical and important findings. Do not change anything else.
+```
+
+**After session:** Re-run tests. If passing and findings addressed, move to next feature.
+
+---
+
+## Feature Queue
+
+Process features from `.cascade/discovery-output.md` in this order:
+1. All P0 features (MVP must-haves)
+2. All P1 features (important)
+3. P2 features (nice-to-have, skip if time-constrained)
+
+## Context Budget Guide
+
+For an 8K context window, budget roughly:
+- Agent definition: ~800 tokens
+- Handoff context: ~200 tokens
+- Tech spec section: ~1000 tokens
+- Source files: ~4000 tokens (2-3 files)
+- Output space: ~2000 tokens
+
+For a 32K context window:
+- Agent definition: ~800 tokens
+- Handoff + full tech spec: ~3000 tokens
+- Source files: ~15000 tokens (5-8 files)
+- Output space: ~13000 tokens
 
 ## Quality Gate
 See `quality-gates/04-implementation.md`
 
-## Transition
-→ After all MVP features complete, hand off to **Tester + Reviewer** for Integration phase
+## When All Features Are Done
+Update `.cascade/state.md` to `IMPLEMENTATION_DONE`.
+Run the Orchestrator to write the handoff for Integration phase.
